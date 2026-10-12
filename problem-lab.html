@@ -1,0 +1,533 @@
+<title>문제 발굴소</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* 레이아웃: 왼쪽에 지층 단면처럼 쌓인 단계 목록, 오른쪽에 발굴 일지 한 장. 좁은 화면에서는 단계 목록이 위로 올라가 가로 띠가 된다. 라이트가 기본이고 다크는 뷰어가 직접 고를 때만 적용 */
+:root {
+  --bg: #d9d2bf;
+  --grid: rgba(70, 56, 32, 0.09);
+  --panel: #f2efe4;
+  --field: #fbfaf3;
+  --fg: #2a2216;
+  --muted: #655a45;
+  --line: #b9ad90;
+  --shade: #b3a785;
+  --accent: #e2570b;
+  --accent-fg: #1c1409;
+  --accent-ink: #ad410a;
+  --accent-soft: #f6dcc6;
+  --good: #3f6b2c;
+  --warn: #8f5f00;
+  --gap: #b3342a;
+  --good-soft: #dde8cf;
+  --warn-soft: #f1e2b8;
+  --gap-soft: #f0d6cf;
+  --s1: #dccaa4; --s1t: #2a2216;
+  --s2: #c8ae7e; --s2t: #2a2216;
+  --s3: #ad8d5b; --s3t: #1f170a;
+  --s4: #84673f; --s4t: #f7f0df;
+  --s5: #6c5336; --s5t: #f7f0df;
+  --s6: #57432f; --s6t: #f7f0df;
+  --s7: #3f3226; --s7t: #f7f0df;
+  --font-display: "Do Hyeon", "Malgun Gothic", sans-serif;
+  --font-body: "IBM Plex Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+:root[data-theme="dark"] {
+  --bg: #1d1812; --grid: rgba(255, 235, 190, 0.05); --panel: #292219; --field: #211b14;
+  --fg: #eadfc8; --muted: #a89c82; --line: #4a3f2e; --shade: #0f0c08;
+  --accent: #ff8a4a; --accent-fg: #1c1409; --accent-ink: #ff9d66; --accent-soft: #4a2c1a;
+  --good: #9cc77f; --warn: #e5b04f; --gap: #f0907f;
+  --good-soft: #28361d; --warn-soft: #3b2e12; --gap-soft: #3c211c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.65;
+  padding-inline: 16px; padding-block: 28px 64px; word-break: keep-all; overflow-wrap: anywhere;
+}
+.wrap { max-width: 1040px; margin-inline: auto; display: grid; gap: 24px; }
+.kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; color: var(--accent-ink); margin: 0 0 4px; text-transform: uppercase; }
+header h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(34px, 6vw, 52px); line-height: 1.1; margin: 0 0 8px; letter-spacing: 0.01em; }
+header p { margin: 0; color: var(--muted); max-width: 60ch; }
+.layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 30px; align-items: start; }
+@media (max-width: 800px) { .layout { grid-template-columns: minmax(0, 1fr); gap: 18px; } }
+
+/* 지층 단계 목록 */
+.strata { list-style: none; margin: 0; padding: 0; display: grid; position: sticky; top: env(safe-area-inset-top, 0px); }
+.strata::before { content: "지표면 0m"; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--muted); padding: 0 2px 6px; border-bottom: 3px solid var(--fg); }
+.strata li { background-color: var(--sc); color: var(--sct); background-image: radial-gradient(rgba(0, 0, 0, 0.16) 1px, transparent 1.6px); background-size: 9px 9px; border-bottom: 1px solid rgba(0, 0, 0, 0.25); min-height: var(--h, 54px); display: flex; }
+.strata li.l1 { --sc: var(--s1); --sct: var(--s1t); --h: 50px; }
+.strata li.l2 { --sc: var(--s2); --sct: var(--s2t); --h: 58px; }
+.strata li.l3 { --sc: var(--s3); --sct: var(--s3t); --h: 54px; }
+.strata li.l4 { --sc: var(--s4); --sct: var(--s4t); --h: 64px; }
+.strata li.l5 { --sc: var(--s5); --sct: var(--s5t); --h: 52px; }
+.strata li.l6 { --sc: var(--s6); --sct: var(--s6t); --h: 58px; }
+.strata li.l7 { --sc: var(--s7); --sct: var(--s7t); --h: 62px; }
+.strata button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; width: 100%; padding: 8px 10px; color: inherit; }
+.strata button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.strata .depth { font-family: var(--font-mono); font-size: 12px; font-weight: 500; }
+.strata .nm { font-size: 14px; font-weight: 600; line-height: 1.3; }
+.strata .opt { display: block; font-size: 11px; font-weight: 400; opacity: 0.85; }
+.strata li.done .depth::after { content: " ✓"; font-weight: 700; }
+.strata li[aria-current="step"] { transform: translateX(10px); box-shadow: inset 6px 0 0 var(--accent), 4px 4px 0 var(--fg); position: relative; z-index: 1; }
+.strata li[aria-current="step"] .nm { font-weight: 700; }
+@media (prefers-reduced-motion: no-preference) { .strata li { transition: transform .15s ease-out; } }
+@media (max-width: 800px) {
+  .strata { display: flex; overflow-x: auto; position: static; padding-bottom: 8px; }
+  .strata::before { display: none; }
+  .strata li { min-height: 0; flex: 0 0 auto; border-bottom: 0; border-right: 1px solid rgba(0, 0, 0, 0.25); }
+  .strata button { grid-template-columns: 1fr; width: auto; min-width: 96px; padding: 8px 12px; gap: 0; }
+  .strata li[aria-current="step"] { transform: none; box-shadow: inset 0 -5px 0 var(--accent); }
+}
+
+/* 발굴 일지 한 장 */
+.panel { background: var(--panel); border: 2px solid var(--fg); border-radius: 2px; box-shadow: 6px 6px 0 var(--shade); padding: 24px 24px 28px; min-width: 0; }
+@media (max-width: 480px) { .panel { padding: 18px 14px 22px; } }
+.gauge { margin-bottom: 18px; }
+.gauge .ticks { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; height: 10px; }
+.gauge .ticks i { background: var(--line); }
+.gauge .ticks i.on { background: var(--fg); }
+.gauge .ticks i.cur { background: var(--accent); }
+.gauge .gl { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+.eyebrow { display: inline-block; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--accent-ink); border: 1.5px dashed var(--accent); padding: 1px 10px; margin: 0 0 10px; text-transform: uppercase; }
+.panel h2 { font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 1.25; margin: 0 0 8px; text-wrap: balance; }
+.lead { color: var(--muted); margin: 0 0 18px; max-width: 62ch; }
+.tip { border: 1px solid var(--warn); border-left: 5px solid var(--warn); background: var(--warn-soft); padding: 8px 12px; margin: 0 0 18px; font-size: 14px; }
+.field { display: grid; gap: 4px; margin-bottom: 14px; }
+.field > label, .lbl { font-size: 13px; font-weight: 600; }
+.hint { font-size: 12.5px; color: var(--muted); font-weight: 400; }
+textarea, input[type="text"], select { font: inherit; color: var(--fg); background: var(--field); border: 1px solid var(--line); border-bottom: 2px solid var(--fg); border-radius: 0; padding: 8px 10px; width: 100%; min-width: 0; }
+textarea { min-height: 70px; resize: vertical; }
+textarea:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 8px; align-items: end; margin-bottom: 12px; }
+@media (max-width: 480px) { .row { grid-template-columns: minmax(0, 1fr); } }
+.row .q { grid-column: 1 / -1; font-size: 13px; font-weight: 600; }
+.row .q b { font-family: var(--font-mono); color: var(--accent-ink); font-weight: 500; margin-right: 6px; }
+.row textarea { min-height: 52px; }
+.tools { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 4px; }
+button.btn { font: inherit; font-weight: 600; cursor: pointer; border-radius: 0; padding: 9px 16px; border: 2px solid var(--fg); background: var(--field); color: var(--fg); }
+button.btn:hover { background: var(--accent-soft); }
+button.primary { background: var(--accent); color: var(--accent-fg); box-shadow: 3px 3px 0 var(--fg); }
+button.primary:hover { background: var(--accent); }
+button.primary:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--fg); }
+button.btn[disabled] { opacity: 0.5; cursor: progress; box-shadow: none; }
+.nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 24px; padding-top: 16px; border-top: 2px dashed var(--line); flex-wrap: wrap; }
+
+/* 감정 결과: 출토품에 붙이는 라벨 */
+.result { margin-top: 24px; border: 2px solid var(--fg); background: var(--field); padding: 0 16px 16px; display: grid; gap: 14px; }
+.result::before { content: "출토품 감정서"; display: block; margin: 0 -16px; padding: 4px 16px; background: var(--fg); color: var(--panel); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; }
+.score { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.score .n { font-family: var(--font-display); font-size: 48px; line-height: 1; font-variant-numeric: tabular-nums; }
+.score .n small { font-size: 18px; color: var(--muted); }
+.bar { display: flex; gap: 3px; flex: 1; min-width: 120px; }
+.bar i { flex: 1; height: 10px; background: var(--line); }
+.bar i.on { background: var(--accent); }
+.summary { font-weight: 600; margin: 0; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.checks li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 10px; align-items: start; }
+.pill { font-family: var(--font-mono); font-size: 11.5px; text-align: center; padding: 2px 6px; border-radius: 0; font-weight: 500; border: 1px solid currentColor; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.gap { background: var(--gap-soft); color: var(--gap); }
+.checks .lb { font-weight: 600; }
+.checks .nt { color: var(--muted); font-size: 14px; }
+.result h3 { font-size: 12.5px; margin: 0 0 4px; font-family: var(--font-mono); letter-spacing: 0.06em; color: var(--accent-ink); font-weight: 500; }
+.result ul.qs { margin: 0; padding-left: 18px; }
+.result ul.qs li { margin-bottom: 3px; }
+.note { color: var(--muted); font-size: 13px; }
+.loading { color: var(--muted); font-family: var(--font-mono); font-size: 13px; padding-top: 14px; }
+.recap { display: grid; gap: 10px; margin-bottom: 14px; }
+.recap div { border-left: 4px solid var(--line); padding-left: 10px; font-size: 14px; }
+.recap b { display: block; font-size: 12px; font-family: var(--font-mono); color: var(--accent-ink); font-weight: 500; }
+.recap span { white-space: pre-wrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.chips:empty { display: none; }
+.chip { font-size: 12.5px; padding: 2px 9px; border: 1px solid currentColor; }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chiphd { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin: 14px 0 0; }
+.chiphd:empty { display: none; }
+.stale { color: var(--warn); font-size: 13px; font-weight: 600; margin: 0; }
+.scorelist { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 6px; }
+.scorelist li { display: grid; grid-template-columns: 96px 52px minmax(0, 1fr); gap: 10px; font-size: 14px; align-items: baseline; }
+.scorelist .sn { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.scorelist .sv { font-weight: 700; font-variant-numeric: tabular-nums; }
+.scorelist li.weak .sv { color: var(--gap); }
+.scorelist li.weak .sm::after { content: " ← 가장 약한 층"; color: var(--gap); font-size: 12px; }
+.stop { margin: -4px 0 12px; padding-left: 12px; border-left: 4px solid var(--warn); }
+.hdr-actions { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+button.btn.small { padding: 4px 12px; font-size: 13px; font-weight: 500; color: var(--muted); border-width: 1px; }
+@media (prefers-reduced-motion: no-preference) { .result { animation: rise .25s ease-out; } @keyframes rise { from { opacity: .3; transform: translateY(4px); } to { opacity: 1; transform: none; } } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="kicker">Site Log · 발굴 일지</p>
+    <h1>문제 발굴소</h1>
+    <p>고민을 하나 적고, 직접 파 내려가 보세요. 한 단계마다 내 생각을 먼저 쓰면 AI가 근거와 빈틈을 짚어 줍니다. 답을 대신 써 주지는 않습니다.</p>
+    <div class="hdr-actions"><button class="btn small" id="reset" type="button">새 문제로 시작</button></div>
+  </header>
+  <div class="layout">
+    <ol class="strata" id="strata" aria-label="단계"></ol>
+    <main class="panel" id="panel"></main>
+  </div>
+</div>
+
+<script>
+(function () {
+  var STEPS = [
+    { key: 'problem', name: '문제 쓰기', q: '누가, 언제, 무엇 때문에 어떤 일을 겪나요?' },
+    { key: 'whys', name: '5 Whys', q: '방금 말한 일이 왜 생겼을까?' },
+    { key: 'tree', name: '이슈 트리', q: '다른 이유도 있을까? 겹치거나 빠진 것은?' },
+    { key: 'hyp', name: '가설과 반례', q: '내 생각이 틀렸다면 무엇이 보여야 할까?' },
+    { key: 'hows', name: '5 Hows', opt: true, q: '그 해결을 구체적으로 어떻게 할까?' },
+    { key: 'scqa', name: 'SCQA', opt: true, q: '상황·문제·질문·제안 순으로 말해 볼까?' },
+    { key: 'final', name: '종합 점검' }
+  ];
+  var EV = [['', '근거 선택'], ['confirmed', '확인됨'], ['guess', '추측'], ['unknown', '확인 필요']];
+  var EVL = { confirmed: '확인됨(직접 본 것·기록·숫자)', guess: '추측', unknown: '확인 필요', '': '(근거 표시 안 함)' };
+
+  function blank() {
+    return {
+      step: 0,
+      problem: { what: '', who: '', when: '', impact: '' },
+      whys: [{ t: '', e: '' }],
+      tree: { criterion: '', branches: [{ t: '', e: '' }, { t: '', e: '' }, { t: '', e: '' }] },
+      hyp: { pick: '', claim: '', counter: '', check: '' },
+      hows: [{ t: '' }],
+      scqa: { s: '', c: '', q: '', a: '' },
+      results: {}
+    };
+  }
+  var S = blank();
+  try {
+    var saved = JSON.parse(localStorage.getItem('problem-lab-v1') || 'null');
+    if (saved && saved.problem) {
+      S = saved;
+      Object.keys(S.results || {}).forEach(function (k) { if (S.results[k] && (S.results[k].loading || S.results[k].error)) delete S.results[k]; });
+    }
+  } catch (e) {}
+  function persist() { try { localStorage.setItem('problem-lab-v1', JSON.stringify(S)); } catch (e) {} }
+
+  var sample = null, busy = false, aiState = 'pending';
+  var $strata = document.getElementById('strata'), $panel = document.getElementById('panel');
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function setPath(path, val) {
+    var p = path.split('.'), o = S;
+    for (var i = 0; i < p.length - 1; i++) o = o[p[i]];
+    o[p[p.length - 1]] = val;
+  }
+  function filled(s) { return s && String(s).trim().length > 0; }
+
+  /* ---------- 화면 조각 ---------- */
+  function field(path, label, hint, val, rows) {
+    var id = 'f-' + path.replace(/\./g, '-');
+    return '<div class="field"><label for="' + id + '">' + label + (hint ? ' <span class="hint">' + hint + '</span>' : '') + '</label>' +
+      '<textarea id="' + id + '" data-path="' + path + '"' + (rows ? ' style="min-height:' + rows + 'px"' : '') + '>' + esc(val) + '</textarea></div>';
+  }
+  function evSelect(path, v) {
+    return '<select data-path="' + path + '" aria-label="근거 표시">' + EV.map(function (o) {
+      return '<option value="' + o[0] + '"' + (o[0] === v ? ' selected' : '') + '>' + o[1] + '</option>';
+    }).join('') + '</select>';
+  }
+
+  function viewProblem() {
+    var p = S.problem;
+    return head('층 1', '문제를 한 덩어리로 써 보세요', '해결책이나 원인을 섞지 말고, 지금 벌어지는 일을 있는 그대로 적습니다.') +
+      '<div class="tools"><button class="btn" data-act="sample">예시로 채워 보기</button></div>' +
+      field('problem.what', '어떤 일이 벌어지나요?', '예: 이번 달 5번 지각했다', p.what, 80) +
+      field('problem.who', '누가 겪나요?', '', p.who) +
+      field('problem.when', '언제·어디서 생기나요?', '', p.when) +
+      field('problem.impact', '그래서 어떤 손해가 있나요?', '횟수·시간·금액처럼 셀 수 있으면 좋아요', p.impact);
+  }
+  function viewWhys() {
+    var rows = S.whys.map(function (w, i) {
+      var prev = i === 0 ? '이 문제가 왜 생겼을까?' : '왜 “' + clip(S.whys[i - 1].t || '앞의 답', 28) + '”일까?';
+      return '<div class="row"><div class="q"><b>Why ' + (i + 1) + '</b>' + esc(prev) + '</div>' +
+        '<textarea data-path="whys.' + i + '.t" aria-label="Why ' + (i + 1) + ' 답">' + esc(w.t) + '</textarea>' + evSelect('whys.' + i + '.e', w.e) + '</div>' +
+        (w.e === 'unknown' ? '<div class="field stop"><label for="why-q-' + i + '">여기서 멈춰요. 다음에 확인할 질문은 무엇인가요?</label><textarea id="why-q-' + i + '" data-path="whys.' + i + '.q">' + esc(w.q) + '</textarea></div>' : '');
+    }).join('');
+    return head('층 2', '5 Whys: 원인 후보를 깊게', '다섯 번을 채울 필요는 없어요. 근거가 없으면 “확인 필요”로 표시하고 멈춘 뒤, 다음에 확인할 질문을 마지막 칸에 남기세요.') +
+      '<p class="tip">앞 단계의 문제: ' + esc(clip(S.problem.what || '(아직 안 썼어요)', 80)) + '</p>' + rows +
+      '<div class="tools">' + (S.whys.length < 5 ? '<button class="btn" data-act="add-why">Why 더하기</button>' : '') +
+      (S.whys.length > 1 ? '<button class="btn" data-act="del-why">마지막 줄 지우기</button>' : '') + '</div>';
+  }
+  function viewTree() {
+    var t = S.tree;
+    var rows = t.branches.map(function (b, i) {
+      return '<div class="row"><div class="q"><b>가지 ' + (i + 1) + '</b></div><textarea data-path="tree.branches.' + i + '.t" aria-label="가지 ' + (i + 1) + '">' + esc(b.t) + '</textarea>' + evSelect('tree.branches.' + i + '.e', b.e) + '</div>';
+    }).join('');
+    return head('층 3', '이슈 트리: 다른 이유도 있을까?', '한 원인에 너무 빨리 확신하지 않도록, 같은 기준으로 원인을 나눠 봅니다. 세 갈래를 만들었다고 원인이 모두 설명되는 것은 아니에요.') +
+      field('tree.criterion', '나누는 기준', '예: 사람 / 절차 / 자료 / 도구, 또는 시간 순서', t.criterion) + rows +
+      '<div class="tools">' + (S.whys.some(function (w) { return filled(w.t); }) ? '<button class="btn" data-act="import-why">5 Whys 답을 가지로 가져오기</button>' : '') + (t.branches.length < 6 ? '<button class="btn" data-act="add-br">가지 더하기</button>' : '') +
+      (t.branches.length > 2 ? '<button class="btn" data-act="del-br">마지막 가지 지우기</button>' : '') + '</div>';
+  }
+  function viewHyp() {
+    var h = S.hyp;
+    var opts = '<option value="">먼저 확인할 후보를 고르세요</option>' + S.tree.branches.filter(function (b) { return filled(b.t); }).map(function (b) {
+      return '<option value="' + esc(b.t) + '"' + (b.t === h.pick ? ' selected' : '') + '>' + esc(clip(b.t, 60)) + '</option>';
+    }).join('');
+    return head('층 4', '가설과 반례', '점수를 올리려고 쓰지 말고, 틀릴 수 있게 쓰세요. 틀렸다면 무엇이 보일지까지 적어야 확인할 수 있습니다.') +
+      '<div class="field"><label for="f-hyp-pick">먼저 확인할 원인 후보</label><select id="f-hyp-pick" data-path="hyp.pick">' + opts + '</select></div>' +
+      field('hyp.claim', '내 가설', '“~ 때문에 ~가 생긴다” 한 문장', h.claim) +
+      field('hyp.counter', '반례: 이 가설이 틀렸다면 무엇이 보일까?', '', h.counter) +
+      field('hyp.check', '확인 방법', '이번 주에 할 수 있는 가장 작은 확인', h.check);
+  }
+  function viewHows() {
+    var rows = S.hows.map(function (w, i) {
+      var prev = i === 0 ? '고르고 싶은 해결 방향을 어떻게 할까?' : '“' + clip(S.hows[i - 1].t || '앞의 답', 28) + '”을(를) 구체적으로 어떻게 할까?';
+      return '<div class="row" style="grid-template-columns:minmax(0,1fr)"><div class="q"><b>How ' + (i + 1) + '</b>' + esc(prev) + '</div>' +
+        '<textarea data-path="hows.' + i + '.t" aria-label="How ' + (i + 1) + '">' + esc(w.t) + '</textarea></div>';
+    }).join('');
+    return head('층 5 · 선택', '5 Hows: 실행 방법이 막연할 때', '해결이 막연하면 “어떻게”를 반복해 오늘 할 첫 행동까지 내려옵니다. 건너뛰어도 괜찮아요.') + rows +
+      '<div class="tools">' + (S.hows.length < 5 ? '<button class="btn" data-act="add-how">How 더하기</button>' : '') +
+      (S.hows.length > 1 ? '<button class="btn" data-act="del-how">마지막 줄 지우기</button>' : '') + '</div>';
+  }
+  function viewScqa() {
+    var s = S.scqa;
+    return head('층 6 · 선택', 'SCQA: 네 문장으로 말하기', '짝에게 설명한다고 생각하고 한 문장씩 쓰세요.') +
+      field('scqa.s', 'S 상황', '모두가 동의하는 배경', s.s) +
+      field('scqa.c', 'C 문제', '상황과 어긋나는 점', s.c) +
+      field('scqa.q', 'Q 질문', '그래서 우리가 답해야 할 질문', s.q) +
+      field('scqa.a', 'A 제안', '질문에 대한 지금의 답', s.a);
+  }
+  function recapHTML() {
+    var p = S.problem, out = [];
+    out.push(['문제', [p.what, p.who && '누가: ' + p.who, p.when && '언제·어디서: ' + p.when, p.impact && '손해: ' + p.impact].filter(Boolean).join('\n')]);
+    out.push(['5 Whys', S.whys.filter(function (w) { return filled(w.t); }).map(function (w, i) { return (i + 1) + '. ' + w.t + ' [' + (EVL[w.e] || '') + ']'; }).join('\n')]);
+    out.push(['이슈 트리 (' + (S.tree.criterion || '기준 없음') + ')', S.tree.branches.filter(function (b) { return filled(b.t); }).map(function (b) { return '· ' + b.t + ' [' + (EVL[b.e] || '') + ']'; }).join('\n')]);
+    out.push(['가설과 반례', [S.hyp.pick && '후보: ' + S.hyp.pick, S.hyp.claim && '가설: ' + S.hyp.claim, S.hyp.counter && '반례: ' + S.hyp.counter, S.hyp.check && '확인: ' + S.hyp.check].filter(Boolean).join('\n')]);
+    var hw = S.hows.filter(function (w) { return filled(w.t); }).map(function (w, i) { return (i + 1) + '. ' + w.t; }).join('\n');
+    if (hw) out.push(['5 Hows', hw]);
+    var s = S.scqa;
+    if (filled(s.s + s.c + s.q + s.a)) out.push(['SCQA', 'S ' + s.s + '\nC ' + s.c + '\nQ ' + s.q + '\nA ' + s.a]);
+    return out;
+  }
+  function viewFinal() {
+    var r = recapHTML().filter(function (x) { return filled(x[1]); }).map(function (x) { return '<div><b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></div>'; }).join('');
+    var rated = STEPS.filter(function (s) { return S.results[s.key] && S.results[s.key].score != null && s.key !== 'final'; });
+    var low = rated.length > 1 ? rated.reduce(function (m, s) { return S.results[s.key].score < S.results[m.key].score ? s : m; }) : null;
+    var table = rated.length ? '<ul class="scorelist">' + rated.map(function (s) {
+      var rr = S.results[s.key], stale = rr.sig && rr.sig !== describe(s.key);
+      return '<li' + (low && low.key === s.key ? ' class="weak"' : '') + '><span class="sn">' + s.name + '</span><span class="sv">' + rr.score + ' / 10</span><span class="sm">' + esc(rr.summary) + (stale ? ' (수정 뒤 재평가 필요)' : '') + '</span></li>';
+    }).join('') + '</ul>' : '';
+    return head('종합', '지금까지 판 것을 한눈에', '단계별 점수를 모아 보고, 전체가 이어지는지 AI에게 마지막으로 점검받으세요. 점수가 가장 낮은 층부터 다시 파면 효과가 커요.') + table +
+      '<div class="recap">' + (r || '<span class="note">아직 쓴 내용이 없어요. 왼쪽에서 1층부터 시작하세요.</span>') + '</div>' +
+      '<div class="tools"><button class="btn" data-act="copy">내용 복사</button></div><p class="note" id="copyMsg" aria-live="polite"></p>';
+  }
+  function head(eyebrow, title, lead) { return '<p class="eyebrow">' + eyebrow + '</p><h2>' + title + '</h2><p class="lead">' + lead + '</p>'; }
+  function clip(s, n) { s = String(s).replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n) + '…' : s; }
+
+  /* ---------- 평가 ---------- */
+  var RUBRIC = {
+    problem: '문제가 구체적인지(누가·언제·어디서·얼마나), 원인이나 해결책이 섞이지 않았는지, 관찰할 수 있는 사실로 적혔는지, 손해를 셀 수 있게 적었는지 본다.',
+    whys: '각 줄이 앞 줄의 원인인지(인과가 이어지는지), 근거 표시(확인됨/추측/확인 필요)가 서술과 맞는지, 추측을 사실처럼 쓰지 않았는지 본다. 근거가 없는데 억지로 다섯 번을 채웠으면 지적한다. 근거가 없을 때 “확인 필요”로 멈추고 다음에 확인할 질문을 남겼으면 칭찬한다.',
+    tree: '같은 기준으로 나눴는지, 가지끼리 겹치는지, 빠진 가지(사람·절차·자료·도구 등)가 있는지, 가지마다 근거 표시가 있는지 본다. 세 갈래를 만들었다고 원인이 모두 설명되는 것은 아님을 상기시킨다.',
+    hyp: '가설이 틀릴 수 있게 쓰였는지, 반례가 눈으로 볼 수 있는 구체적 신호인지, 확인 방법이 작고 이번 주에 가능한지, 고른 후보가 이슈 트리와 5 Whys에서 근거가 있는지 본다.',
+    hows: '각 단계가 앞 단계보다 더 구체적인 행동으로 내려가는지, 마지막이 오늘 바로 할 수 있는 첫 행동인지 본다.',
+    scqa: '상황이 모두 동의할 사실인지, 문제가 상황과 어긋남을 보여 주는지, 질문이 문제에서 자연스럽게 나오는지, 제안이 질문에 답하는지, 문장이 짧은지 본다.',
+    final: '문제 정의, 5 Whys, 이슈 트리, 가설이 서로 이어지는지, 가장 약한 연결 고리가 어디인지, 다음에 확인할 것이 분명한지 본다.'
+  };
+  function describe(key) {
+    var map = {
+      problem: function () { return recapHTML()[0][1]; },
+      whys: function () { return '문제: ' + S.problem.what + '\n' + S.whys.map(function (w, i) { return 'Why ' + (i + 1) + ': ' + w.t + ' / 근거 표시: ' + EVL[w.e] + (w.e === 'unknown' ? ' / 다음에 확인할 질문: ' + (w.q || '(비어 있음)') : ''); }).join('\n'); },
+      tree: function () { return '문제: ' + S.problem.what + '\n나누는 기준: ' + S.tree.criterion + '\n' + S.tree.branches.map(function (b, i) { return '가지 ' + (i + 1) + ': ' + b.t + ' / 근거 표시: ' + EVL[b.e]; }).join('\n') + '\n(참고) 5 Whys: ' + S.whys.map(function (w) { return w.t; }).join(' → '); },
+      hyp: function () { return '문제: ' + S.problem.what + '\n고른 후보: ' + S.hyp.pick + '\n가설: ' + S.hyp.claim + '\n반례: ' + S.hyp.counter + '\n확인 방법: ' + S.hyp.check + '\n(참고) 이슈 트리 가지: ' + S.tree.branches.map(function (b) { return b.t + '[' + EVL[b.e] + ']'; }).join(' | '); },
+      hows: function () { return '가설: ' + S.hyp.claim + '\n' + S.hows.map(function (w, i) { return 'How ' + (i + 1) + ': ' + w.t; }).join('\n'); },
+      scqa: function () { return 'S: ' + S.scqa.s + '\nC: ' + S.scqa.c + '\nQ: ' + S.scqa.q + '\nA: ' + S.scqa.a + '\n(참고) 문제: ' + S.problem.what; },
+      final: function () { return recapHTML().map(function (x) { return '[' + x[0] + ']\n' + x[1]; }).join('\n\n'); }
+    };
+    return map[key]();
+  }
+  function hasContent(key) {
+    if (key === 'problem') return filled(S.problem.what);
+    if (key === 'whys') return S.whys.some(function (w) { return filled(w.t); });
+    if (key === 'tree') return S.tree.branches.filter(function (b) { return filled(b.t); }).length >= 2;
+    if (key === 'hyp') return filled(S.hyp.claim);
+    if (key === 'hows') return S.hows.some(function (w) { return filled(w.t); });
+    if (key === 'scqa') return filled(S.scqa.s + S.scqa.c + S.scqa.q + S.scqa.a);
+    return filled(S.problem.what);
+  }
+  function minMsg(key) {
+    return { problem: '“어떤 일이 벌어지나요?”를 먼저 써 주세요.', whys: 'Why를 한 줄 이상 써 주세요.', tree: '가지를 두 개 이상 써 주세요.', hyp: '내 가설을 써 주세요.', hows: 'How를 한 줄 이상 써 주세요.', scqa: '네 문장 중 하나 이상 써 주세요.', final: '1층에서 문제를 먼저 써 주세요.' }[key];
+  }
+
+  function evaluate(key) {
+    if (busy) return;
+    if (!hasContent(key)) { S.results[key] = { error: minMsg(key) }; return render(); }
+    if (!sample) { S.results[key] = { error: aiState === 'pending' ? 'AI 연결을 확인하는 중이에요. 잠시 뒤 다시 눌러 주세요.' : '이 화면에서는 AI 평가를 쓸 수 없어요. 직접 쓰는 연습은 그대로 할 수 있습니다.' }; return render(); }
+    busy = true; S.results[key] = { loading: true }; render();
+    var prompt = '너는 문제정의를 가르치는 코치다. 학습자가 직접 쓴 생각을 평가한다.\n' +
+      '규칙: 학습자 대신 답을 써 주지 않는다. 칭찬은 구체적인 부분만, 지적은 가장 고칠 것 위주로. 점수는 후하게 주지 않는다(5 이하면 크게 고칠 것이 있다는 뜻). 한국어로, 중학생도 이해할 쉬운 말로 쓴다.\n' +
+      '이번 단계: ' + STEPS.filter(function (s) { return s.key === key; })[0].name + '\n평가 관점: ' + RUBRIC[key] + '\n\n[학습자가 쓴 내용]\n' + describe(key) + '\n\n' +
+      '아래 JSON만 출력해. 설명이나 코드펜스 없이.\n' +
+      '{"score": 0~10 정수, "summary": "한 줄 총평(60자 이내)", "checks": [{"label": "점검 항목 이름", "status": "good|warn|gap", "note": "근거를 들어 한두 문장"}] (3~5개), "questions": ["학습자에게 되묻는 질문 또는 반례를 찾게 하는 질문"] (2~3개), "next": "다음에 확인하거나 고칠 것 한 가지"}';
+    sample.json(prompt, { cache: false }).then(function (r) {
+      busy = false;
+      if (!r || typeof r.score === 'undefined') throw { message: '형식이 맞지 않는 답이 왔어요.' };
+      r.sig = describe(key); S.results[key] = r; persist(); render();
+    }).catch(function (err) {
+      busy = false;
+      var m = err && err.code === 'rate_limited' ? '요청이 너무 잦아요. 잠시 뒤에 다시 눌러 주세요.' : err && err.code === 'not_granted' ? 'AI 사용을 허용하지 않아서 평가할 수 없어요.' : '평가를 가져오지 못했어요. 다시 눌러 주세요.';
+      S.results[key] = { error: m }; render();
+    });
+  }
+
+  function resultHTML(key) {
+    var r = S.results[key];
+    if (!r) return '';
+    if (r.loading) return '<div class="result"><span class="loading">내 생각을 읽고 있어요…</span></div>';
+    if (r.error) return '<div class="result"><span class="note">' + esc(r.error) + '</span></div>';
+    var sc = Math.max(0, Math.min(10, Math.round(Number(r.score) || 0)));
+    var bar = ''; for (var i = 0; i < 10; i++) bar += '<i class="' + (i < sc ? 'on' : '') + '"></i>';
+    var st = { good: '좋아요', warn: '보완', gap: '비어 있음' };
+    var checks = (r.checks || []).map(function (c) {
+      var k = st[c.status] ? c.status : 'warn';
+      return '<li><span class="pill ' + k + '">' + st[k] + '</span><div><div class="lb">' + esc(c.label) + '</div><div class="nt">' + esc(c.note) + '</div></div></li>';
+    }).join('');
+    var qs = (r.questions || []).map(function (q) { return '<li>' + esc(q) + '</li>'; }).join('');
+    return '<div class="result" aria-live="polite"><div class="score"><div class="n">' + sc + '<small> / 10</small></div><div class="bar" aria-hidden="true">' + bar + '</div></div>' +
+      '<p class="summary">' + esc(r.summary) + '</p><ul class="checks">' + checks + '</ul>' +
+      (qs ? '<div><h3>되물음</h3><ul class="qs">' + qs + '</ul></div>' : '') +
+      (r.next ? '<div><h3>다음에 할 것</h3><div>' + esc(r.next) + '</div></div>' : '') +
+      (r.sig && r.sig !== describe(key) ? '<p class="stale">이 평가는 수정하기 전 내용 기준이에요. 다시 평가받아 보세요.</p>' : '<p class="note">고친 뒤 다시 평가받으면 점수가 달라질 수 있어요.</p>') + '</div>';
+  }
+
+  /* AI에 보내기 전에 브라우저에서 바로 하는 점검 */
+  function localChecks() {
+    var key = STEPS[S.step].key, c = [];
+    function add(ok, good, bad) { c.push({ s: ok ? 'good' : 'warn', t: ok ? good : bad }); }
+    if (key === 'problem') {
+      var p = S.problem;
+      if (!filled(p.what)) return [];
+      add(p.what.trim().length >= 15, '문제 문장이 구체적이에요', '문제 문장이 짧아요. 상황을 한 줄 더 적어 보세요');
+      add(/\d/.test(p.what + p.impact), '숫자가 들어 있어요', '횟수나 시간 같은 숫자가 없어요');
+      add(!/(해야|하자|하면 좋|만들|도입|사야)/.test(p.what), '해결책이 섞이지 않았어요', '해결책이 섞인 말투예요. 일어난 일만 적어 보세요');
+    } else if (key === 'whys') {
+      var rows = S.whys.filter(function (w) { return filled(w.t); });
+      if (!rows.length) return [];
+      add(rows.some(function (w) { return w.e === 'confirmed'; }), '직접 확인한 줄이 있어요', '“확인됨”으로 표시한 줄이 없어요');
+      add(rows.every(function (w) { return w.e; }), '모든 줄에 근거를 표시했어요', '근거를 표시하지 않은 줄이 있어요');
+      if (rows.some(function (w) { return w.e === 'unknown' && !filled(w.q); })) add(false, '', '“확인 필요”에서 멈췄다면 확인할 질문을 남겨 주세요');
+    } else if (key === 'tree') {
+      var bs = S.tree.branches.filter(function (b) { return filled(b.t); });
+      if (!bs.length) return [];
+      add(filled(S.tree.criterion), '나누는 기준을 적었어요', '나누는 기준이 비어 있어요');
+      add(bs.length >= 3, '가지가 세 개 이상이에요', '가지가 세 개보다 적어요. 빠진 원인이 없는지 보세요');
+      add(bs.every(function (b) { return b.e; }), '가지마다 근거를 표시했어요', '근거를 표시하지 않은 가지가 있어요');
+    } else if (key === 'hyp') {
+      if (!filled(S.hyp.claim)) return [];
+      add(!!S.hyp.pick, '확인할 후보를 골랐어요', '이슈 트리에서 확인할 후보를 고르지 않았어요');
+      add(filled(S.hyp.counter), '반례를 적었어요', '반례가 비어 있어요');
+      add(filled(S.hyp.check), '확인 방법을 적었어요', '확인 방법이 비어 있어요');
+    }
+    return c;
+  }
+  function updateLocal() {
+    var el = document.getElementById('local');
+    if (!el) return;
+    var c = localChecks();
+    el.innerHTML = c.length ? '<p class="chiphd">보내기 전 스스로 점검</p><div class="chips">' + c.map(function (x) { return '<span class="chip ' + x.s + '">' + esc(x.t) + '</span>'; }).join('') + '</div>' : '';
+  }
+
+  /* ---------- 그리기 ---------- */
+  function gauge() {
+    var t = '';
+    for (var i = 0; i < STEPS.length; i++) t += '<i class="' + (i === S.step ? 'cur' : i < S.step ? 'on' : '') + '"></i>';
+    return '<div class="gauge" aria-hidden="true"><div class="ticks">' + t + '</div><div class="gl"><span>지표면</span><span>현재 깊이 ' + (S.step < 6 ? '−' + (S.step + 1) + 'm' : '출토 단계') + '</span></div></div>';
+  }
+  function render() {
+    var key = STEPS[S.step].key;
+    var views = { problem: viewProblem, whys: viewWhys, tree: viewTree, hyp: viewHyp, hows: viewHows, scqa: viewScqa, final: viewFinal };
+    var label = key === 'final' ? '종합 평가 받기' : 'AI 평가 받기';
+    $panel.innerHTML = gauge() + views[key]() + '<div id="local"></div>' +
+      '<div class="tools"><button class="btn primary" data-act="eval"' + (busy ? ' disabled' : '') + '>' + label + '</button></div>' +
+      '<p class="note">' + esc(STEPS[S.step].q) + '</p>' + resultHTML(key) +
+      '<div class="nav"><button class="btn" data-act="prev"' + (S.step === 0 ? ' disabled' : '') + '>이전 층</button>' +
+      '<button class="btn" data-act="next"' + (S.step === STEPS.length - 1 ? ' disabled' : '') + '>' + (STEPS[S.step + 1] && STEPS[S.step + 1].opt ? '다음 층 (선택)' : '다음 층') + '</button></div>';
+    $strata.innerHTML = STEPS.map(function (s, i) {
+      var done = S.results[s.key] && S.results[s.key].score != null;
+      return '<li class="l' + (i + 1) + (done ? ' done' : '') + '"' + (i === S.step ? ' aria-current="step"' : '') + '><button data-go="' + i + '"><span class="depth">' + (i < 6 ? '−' + (i + 1) + 'm' : '출토') + '</span><span class="nm">' + s.name + (s.opt ? '<span class="opt">선택</span>' : '') + '</span></button></li>';
+    }).join('');
+    updateLocal();
+    persist();
+  }
+
+  /* ---------- 이벤트 ---------- */
+  $panel.addEventListener('input', function (e) {
+    var p = e.target.getAttribute && e.target.getAttribute('data-path');
+    if (!p) return;
+    setPath(p, e.target.value); persist();
+    if (e.target.tagName === 'SELECT') {
+      render();
+      var again = $panel.querySelector('[data-path="' + p + '"]');
+      if (again) again.focus();
+    } else { updateLocal(); }
+  });
+  var resetTimer = null, $reset = document.getElementById('reset');
+  $reset.addEventListener('click', function () {
+    if (!resetTimer) {
+      $reset.textContent = '지워도 될까요? 한 번 더 누르세요';
+      resetTimer = setTimeout(function () { resetTimer = null; $reset.textContent = '새 문제로 시작'; }, 4000);
+      return;
+    }
+    clearTimeout(resetTimer); resetTimer = null; $reset.textContent = '새 문제로 시작';
+    S = blank(); render(); window.scrollTo(0, 0);
+  });
+  $strata.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-go]');
+    if (b) { S.step = +b.getAttribute('data-go'); render(); window.scrollTo(0, 0); }
+  });
+  $panel.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!b) return;
+    var a = b.getAttribute('data-act');
+    if (a === 'eval') return evaluate(STEPS[S.step].key);
+    if (a === 'next' && S.step < STEPS.length - 1) { S.step++; render(); window.scrollTo(0, 0); return; }
+    if (a === 'prev' && S.step > 0) { S.step--; render(); window.scrollTo(0, 0); return; }
+    if (a === 'add-why') S.whys.push({ t: '', e: '' });
+    else if (a === 'del-why') S.whys.pop();
+    else if (a === 'add-br') S.tree.branches.push({ t: '', e: '' });
+    else if (a === 'del-br') S.tree.branches.pop();
+    else if (a === 'import-why') {
+      S.whys.filter(function (w) { return filled(w.t); }).forEach(function (w) {
+        if (S.tree.branches.some(function (b) { return b.t.trim() === w.t.trim(); })) return;
+        var slot = S.tree.branches.filter(function (b) { return !filled(b.t); })[0];
+        if (slot) { slot.t = w.t; slot.e = w.e; }
+        else if (S.tree.branches.length < 6) S.tree.branches.push({ t: w.t, e: w.e });
+      });
+    }
+    else if (a === 'add-how') S.hows.push({ t: '' });
+    else if (a === 'del-how') S.hows.pop();
+    else if (a === 'sample') {
+      S.problem = { what: '이번 달에 평일 아침 출근 시간에 5번 늦었다.', who: '나(직장인 2년 차)', when: '월·수요일 아침, 집에서 나서는 시각이 8시 20분을 넘길 때', impact: '지각 5번, 팀 아침 회의 앞부분을 놓침. 매번 15분 정도 늦음.' };
+      S.whys = [{ t: '집에서 나서는 시각이 계획보다 늦어진다.', e: 'confirmed' }, { t: '준비하다가 가방을 다시 싸게 된다.', e: 'guess' }];
+    }
+    else if (a === 'copy') {
+      var sc = STEPS.filter(function (s) { return S.results[s.key] && S.results[s.key].score != null; }).map(function (s) { return '- ' + s.name + ' ' + S.results[s.key].score + '/10: ' + S.results[s.key].summary; }).join('\n');
+      var txt = recapHTML().filter(function (x) { return filled(x[1]); }).map(function (x) { return '## ' + x[0] + '\n' + x[1]; }).join('\n\n') + (sc ? '\n\n## AI 평가\n' + sc : '');
+      var msg = document.getElementById('copyMsg');
+      var ok = function () { if (msg) msg.textContent = '복사했어요.'; };
+      var fail = function () { if (msg) msg.textContent = '복사가 막혀 있어요. 아래 내용을 직접 선택해 복사해 주세요.'; };
+      try { navigator.clipboard.writeText(txt).then(ok, fail); } catch (er) { fail(); }
+      return;
+    }
+    render();
+    if (/^add-/.test(a)) { var ta = $panel.querySelectorAll('.row textarea'); if (ta.length) ta[ta.length - 1].focus(); }
+  });
+
+  render();
+
+  /* AI 연결은 화면을 막지 않고 뒤에서 확인 */
+  if (window.claude && window.claude.use) {
+    window.claude.use('sample').then(function (s) { sample = s; aiState = s ? 'ok' : 'none'; }).catch(function () { aiState = 'none'; });
+  } else { aiState = 'none'; }
+})();
+</script>
