@@ -1,0 +1,26 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>문제 발굴소</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+
+<div class="wrap">
+  <header>
+    <p class="kicker">Site Log · 발굴 일지</p>
+    <h1>문제 발굴소</h1>
+    <p>고민을 하나 적고, 직접 파 내려가 보세요. 한 단계마다 내 생각을 먼저 쓰면 AI가 근거와 빈틈을 짚어 줍니다. 답을 대신 써 주지는 않습니다.</p>
+    <div class="hdr-actions"><button class="btn small" id="reset" type="button">새 문제로 시작</button></div>
+  </header>
+  <div class="layout">
+    <ol class="strata" id="strata" aria-label="단계"></ol>
+    <main class="panel" id="panel"></main>
+  </div>
+</div>
+
+<script src="js/state.js"></script>
+<script src="js/views.js"></script>
+<script src="js/evaluate.js"></script>
+<script src="js/checks.js"></script>
+<script src="js/app.js"></script>
