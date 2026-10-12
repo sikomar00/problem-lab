@@ -52,7 +52,9 @@
       r.sig = describe(key); S.results[key] = r; persist(); PL.render();
     }).catch(function (err) {
       ai.busy = false;
-      var m = err && err.code === 'rate_limited' ? '요청이 너무 잦아요. 잠시 뒤에 다시 눌러 주세요.' : err && err.code === 'not_granted' ? 'AI 사용을 허용하지 않아서 평가할 수 없어요.' : '평가를 가져오지 못했어요. 다시 눌러 주세요.';
+      var codes = { rate_limited: '요청이 너무 잦아요. 잠시 뒤에 다시 눌러 주세요.', not_granted: 'AI 사용을 허용하지 않아서 평가할 수 없어요.', no_key: '선택한 제공사의 API 키가 아직 없어요. 위의 “API 키”에서 먼저 저장해 주세요.', auth_failed: 'API 키가 올바르지 않거나 권한이 없어요. 키를 다시 확인해 주세요.', network: '인터넷에 연결하지 못했어요. 연결을 확인하고 다시 눌러 주세요.', bad_request: '이 모델로 요청하지 못했어요. 다른 모델을 골라 보세요.' };
+      var m = (err && codes[err.code]) || '평가를 가져오지 못했어요. 다시 눌러 주세요.';
+      if (err && err.code === 'bad_request' && err.message) m += ' (' + String(err.message).slice(0, 140) + ')';
       S.results[key] = { error: m }; PL.render();
     });
   }

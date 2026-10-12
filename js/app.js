@@ -117,9 +117,7 @@
   });
 
   /* AI 연결은 화면을 막지 않고 뒤에서 확인 */
-  if (window.claude && window.claude.use) {
-    window.claude.use('sample').then(function (s) { PL.ai.sample = s; PL.ai.state = s ? 'ok' : 'none'; }).catch(function () { PL.ai.state = 'none'; });
-  } else { PL.ai.state = 'none'; }
+  PL.initAI();
 
   PL.render = render;
 })();

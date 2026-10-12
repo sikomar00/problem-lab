@@ -34,20 +34,25 @@
     return JSON.stringify([S.title, S.problem, S.whys, S.tree, S.hyp, S.hows, S.scqa, r, !!S.archived]);
   }
 
+  /* backend: 로컬 모드면 null. db와 데스크톱 앱은 { set(rec), del(id) }를 채운다 */
+  var backend = null;
+  function queued(id, fn) {
+    var p = (chains[id] || Promise.resolve()).then(fn)
+      .then(function () { api.lastError = null; }, function (e) { api.lastError = e; emit(); });
+    chains[id] = p;
+    return p;
+  }
   function save(rec) {
     items[rec.id] = rec;
-    if (mode === 'local') { writeLocal(); emit(); return Promise.resolve(); }
-    var p = (chains[rec.id] || Promise.resolve()).then(function () { return col.doc(rec.id).set(rec); })
-      .then(function () { api.lastError = null; }, function (e) { api.lastError = e; emit(); });
-    chains[rec.id] = p;
+    if (!backend) { writeLocal(); emit(); return Promise.resolve(); }
+    var p = queued(rec.id, function () { return backend.set(rec); });
+    if (mode === 'desktop') emit();
     return p;
   }
   function remove(id) {
     delete items[id];
-    if (mode === 'local') { writeLocal(); emit(); return Promise.resolve(); }
-    var p = (chains[id] || Promise.resolve()).then(function () { return col.doc(id).delete(); })
-      .then(function () { api.lastError = null; }, function (e) { api.lastError = e; emit(); });
-    chains[id] = p;
+    if (!backend) { writeLocal(); emit(); return Promise.resolve(); }
+    var p = queued(id, function () { return backend.del(id); });
     emit();
     return p;
   }
@@ -100,7 +105,33 @@
     if (lg) { items[lg.id] = lg; writeLocal(); try { localStorage.removeItem(OLD); } catch (e) {} }
   }
 
+  /* 윈도우 앱(pywebview)에서만 주소에 ?app=desktop이 붙는다. 파이썬 쪽 함수가 준비되길 기다린다 */
+  var dp = null;
+  PL.desktopApi = function () {
+    if (dp) return dp;
+    dp = new Promise(function (resolve) {
+      if (!/[?&]app=desktop/.test(location.search)) return resolve(null);
+      /* 파이썬 함수는 창이 다 뜬 뒤에 붙는다. 이벤트를 기다리면서 100ms마다 직접 확인하고, 15초가 지나면 포기한다 */
+      var done = false, tries = 0;
+      function ready() { return window.pywebview && window.pywebview.api && typeof window.pywebview.api.load_items === 'function'; }
+      function finish() { if (done) return; done = true; resolve(ready() ? window.pywebview.api : null); }
+      window.addEventListener('pywebviewready', function () { if (ready()) finish(); });
+      var iv = setInterval(function () { tries++; if (ready() || tries > 150) { clearInterval(iv); finish(); } }, 100);
+    });
+    return dp;
+  };
+
   var ready = (async function () {
+    var desk = await PL.desktopApi();
+    if (desk) {
+      try {
+        var all = JSON.parse(await desk.load_items());
+        items = all.items || {};
+        backend = { set: function (rec) { return desk.save_item(JSON.stringify(rec)); }, del: function (id) { return desk.delete_item(id); } };
+        mode = 'desktop';
+        return;
+      } catch (e) { /* 파이썬 쪽이 응답하지 않으면 아래 로컬 저장으로 */ }
+    }
     var db = null, uid = null;
     try {
       if (window.claude && window.claude.use) {
@@ -112,6 +143,7 @@
     if (!(db && uid)) { fallbackLocal(); return; }
     /* 내 비공개 영역: data/users/<내 id>/ 아래에 문제마다 문서 하나 */
     col = db.collection('data/users/' + uid);
+    backend = { set: function (rec) { return col.doc(rec.id).set(rec); }, del: function (id) { return col.doc(id).delete(); } };
     mode = 'db';
     await new Promise(function (resolve) {
       var first = true;
@@ -121,7 +153,7 @@
         items = next;
         if (first) { first = false; resolve(); } else emit();
       }, function () {
-        if (first) { first = false; fallbackLocal(); resolve(); }
+        if (first) { first = false; backend = null; fallbackLocal(); resolve(); }
       });
     });
   })();

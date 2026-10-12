@@ -14,7 +14,15 @@
 | 6 | SCQA (선택) | 상황·문제·질문·제안 네 문장 |
 | 종합 | 종합 점검 | 단계별 점수 모아 보기, 전체 흐름 점검, 내용 복사 |
 
-## 실행
+## 실행 방법 세 가지
+
+| 방법 | AI 평가 | 문제 저장 위치 |
+|---|---|---|
+| **Claude 아티팩트** | 아티팩트의 `sample` 기능. 모델은 빠름/균형/정교 단계로 고름 | 아티팩트 안의 내 비공개 저장소(db) |
+| **윈도우 앱** (`desktop/`) | 내 Anthropic 또는 OpenAI API 키로 직접 호출. 제공사·모델을 고름 | `%APPDATA%\ProblemLab\problems.json` |
+| **웹 서버로 열기** | 안 돼요(직접 쓰는 연습, 스스로 점검, 대시보드는 됨) | 이 브라우저의 localStorage |
+
+### 웹 서버로 열기
 
 빌드 도구는 없어요. 정적 파일이라 폴더를 서버로 띄우면 됩니다.
 
@@ -25,28 +33,35 @@ python -m http.server 8765
 
 `index.html`을 바로 열어도 동작하도록 `import` 없는 일반 스크립트로 만들었어요.
 
-### AI 평가는 Claude 아티팩트 안에서만 동작해요
+### 윈도우 앱
 
-"AI 평가 받기"는 Claude 아티팩트가 제공하는 `sample` 기능(`window.claude.use('sample')`)을 써요. 아티팩트가 아닌 곳에서 열면 이 기능이 없어서, 평가 버튼을 누르면 "이 화면에서는 AI 평가를 쓸 수 없어요"라고 나와요. 직접 쓰는 연습, 스스로 점검, 종합 화면은 그대로 쓸 수 있어요.
+`desktop/`에서 `.uild.ps1`을 실행하면 `dist\ProblemLab.exe`가 만들어져요. 자세한 내용은 [desktop/README.md](desktop/README.md)를 보세요.
 
-아티팩트로 올릴 때는 `capabilities: {"sample": {}}`를 선언하고, `index.html`, `styles.css`, `js/*.js`를 함께 올려요.
+### AI 모델 선택
+
+헤더의 "AI 모델"에서 고르면 다음 평가부터 적용돼요.
+
+- **아티팩트:** Claude만 쓸 수 있고, 빠름 / 균형 / 정교 단계로 골라요. 아티팩트 안에서는 다른 회사 API로 나갈 수 없어요.
+- **윈도우 앱:** Claude와 GPT 중에 제공사를 고르고, 모델은 목록에서 고르거나 이름을 직접 넣어요. 기본 목록은 `js/ai.js`가 아니라 `desktop/app.py`의 `PROVIDERS`에 있어요.
 
 ## 파일 구성
 
 ```
 index.html        뼈대(마크업)와 스크립트 불러오기
 styles.css        "발굴 현장" 픽셀 게임 테마. 맨 위 :root에 색·글꼴 토큰
+desktop/          윈도우 앱(pywebview + PyInstaller)
 fonts/            Galmuri11 픽셀 글꼴(Regular, Bold). 라이선스 안내는 fonts/README.txt
 js/state.js       단계 정의, 상태(S), 저장, 공용 도우미
 js/views.js       단계별 입력 화면, 종합 화면
-js/store.js       문제 저장소(아티팩트 db 또는 localStorage)
+js/store.js       문제 저장소(윈도우 앱 파일, 아티팩트 db, 또는 localStorage)
 js/evaluate.js    평가 기준(RUBRIC), AI 프롬프트, 평가 결과 카드
 js/checks.js      AI에 보내기 전 스스로 점검
+js/ai.js          AI 연결, 제공사·모델 선택(아티팩트 / 윈도우 앱)
 js/dashboard.js   대시보드(통계, 목록, 복제·보관·삭제, 내보내기·가져오기)
 js/app.js         화면 그리기, 탭 전환, 시작
 ```
 
-각 파일은 `window.PL`에 필요한 것을 올리고 서로 가져다 써요. 불러오는 순서는 `state → views → store → evaluate → checks → dashboard → app`이에요. `import`를 쓰지 않는 일반 스크립트라서 로컬 서버 없이도 로드돼요.
+각 파일은 `window.PL`에 필요한 것을 올리고 서로 가져다 써요. 불러오는 순서는 `state → views → store → evaluate → checks → ai → dashboard → app`이에요. `import`를 쓰지 않는 일반 스크립트라서 로컬 서버 없이도 로드돼요.
 
 ## 고쳐 쓰기
 

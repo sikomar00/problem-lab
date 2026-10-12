@@ -64,7 +64,7 @@
     var avgs = ms.map(function (m) { return m.avg; }).filter(function (v) { return v != null; });
     var doneN = ms.filter(function (m) { return m.status === 'done'; }).length;
     var week = live.filter(function (r) { return Date.now() - (r.updatedAt || 0) < 7 * 864e5; }).length;
-    var info = store.mode() === 'db' ? '저장 위치: 이 아티팩트 안의 내 비공개 저장소예요. 다른 사람은 볼 수 없어요.' : '저장 위치: 이 브라우저예요. 다른 기기에서는 보이지 않아요.';
+    var info = { db: '저장 위치: 이 아티팩트 안의 내 비공개 저장소예요. 다른 사람은 볼 수 없어요.', desktop: '저장 위치: 이 컴퓨터의 %APPDATA%\ProblemLab 폴더예요.', local: '저장 위치: 이 브라우저예요. 다른 기기에서는 보이지 않아요.' }[store.mode()];
     if (store.lastError) info += ' 마지막 저장이 실패했어요. 잠시 뒤 다시 시도해 주세요.';
     document.getElementById('d-info').textContent = info;
 

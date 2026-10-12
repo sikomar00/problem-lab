@@ -1,0 +1,5 @@
+desktop/.venv/
+desktop/build/
+desktop/dist/
+desktop/*.spec
+__pycache__/
