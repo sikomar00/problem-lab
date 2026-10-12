@@ -35,15 +35,18 @@ python -m http.server 8765
 
 ```
 index.html        뼈대(마크업)와 스크립트 불러오기
-styles.css        "발굴 현장" 테마. 맨 위 :root에 색·글꼴 토큰
+styles.css        "발굴 현장" 픽셀 게임 테마. 맨 위 :root에 색·글꼴 토큰
+fonts/            Galmuri11 픽셀 글꼴(Regular, Bold). 라이선스 안내는 fonts/README.txt
 js/state.js       단계 정의, 상태(S), 저장, 공용 도우미
 js/views.js       단계별 입력 화면, 종합 화면
+js/store.js       문제 저장소(아티팩트 db 또는 localStorage)
 js/evaluate.js    평가 기준(RUBRIC), AI 프롬프트, 평가 결과 카드
 js/checks.js      AI에 보내기 전 스스로 점검
-js/app.js         화면 그리기, 이벤트, 시작
+js/dashboard.js   대시보드(통계, 목록, 복제·보관·삭제, 내보내기·가져오기)
+js/app.js         화면 그리기, 탭 전환, 시작
 ```
 
-각 파일은 `window.PL`에 필요한 것을 올리고 서로 가져다 써요. 불러오는 순서는 `state → views → evaluate → checks → app`이에요. `import`를 쓰지 않는 일반 스크립트라서 로컬 서버 없이도 로드돼요.
+각 파일은 `window.PL`에 필요한 것을 올리고 서로 가져다 써요. 불러오는 순서는 `state → views → store → evaluate → checks → dashboard → app`이에요. `import`를 쓰지 않는 일반 스크립트라서 로컬 서버 없이도 로드돼요.
 
 ## 고쳐 쓰기
 
@@ -51,10 +54,17 @@ js/app.js         화면 그리기, 이벤트, 시작
 - **스스로 점검 바꾸기:** `js/checks.js`의 `localChecks()`에서 단계별 조건을 고쳐요.
 - **단계 추가:** `js/state.js`의 `STEPS`와 `blank()`, `js/views.js`의 화면 함수, `js/evaluate.js`의 `RUBRIC`·`describe`·`hasContent`, `styles.css`의 지층 색(`.l1`~`.l7`)을 함께 고쳐요.
 - **디자인 바꾸기:** `styles.css` 맨 위 `:root`의 색과 글꼴 토큰만 바꾸면 돼요. 라이트가 기본이고, 다크는 `data-theme="dark"`일 때만 적용돼요.
+- **픽셀 테마:** 한글 픽셀 글꼴은 Galmuri11(`fonts/`), 영문·숫자 라벨은 Google Fonts의 Press Start 2P예요. 테두리는 `box-shadow`로 모서리를 깎은 모양을 만들고, 이미지 파일은 쓰지 않아요. 헤더의 보석 로고는 `index.html`의 인라인 SVG예요.
+- **아티팩트에 올릴 때:** 아티팩트는 글꼴 파일을 자기 주소에서 불러오지 못할 수 있어서, `fonts/*.woff2`를 base64로 `styles.css`에 넣은 사본을 올렸어요. 저장소의 `styles.css`는 `url("fonts/...")`로 불러오는 원본이에요.
 
-## 저장
+## 저장과 대시보드
 
-작성 중인 내용은 이 브라우저의 `localStorage`(`problem-lab-v1`)에만 저장돼요. 다른 기기나 다른 사람에게는 가지 않아요. 맨 위 "새 문제로 시작"으로 지울 수 있어요.
+문제는 쓰는 대로 자동 저장되고(0.7초 모았다가 내용이 달라졌을 때만), 맨 위 "대시보드" 탭에서 모아 볼 수 있어요.
+
+- **대시보드:** 문제 수, 평균 점수, 핵심 완료(1~4층 평가), 이번 주 수정, 층별 평균 점수, 가장 약했던 층, 문제 목록(찾기·상태·정렬), 열기·복제·보관·삭제(두 번 눌러야 삭제), JSON 내보내기·가져오기.
+- **저장 위치:** Claude 아티팩트에서는 `db` 기능으로 `data/users/<내 id>/` 아래 문제마다 문서 하나를 저장해요. 이 영역은 나만 볼 수 있어요. 아티팩트가 아닌 곳에서는 이 브라우저의 `localStorage`(`problem-lab-v2`)에 저장해요. 두 방식은 `js/store.js`가 같은 함수로 감싸요.
+- **옮기기:** 아티팩트에서 열었을 때 이 브라우저에 저장된 문제가 있으면 대시보드 맨 아래에서 db로 옮길 수 있어요. 예전 단일 문제 저장(`problem-lab-v1`)은 자동으로 하나의 문제로 바뀌어요.
+- **내보내기·가져오기:** 가져오면 같은 문제가 있어도 새 문제로 추가돼요. 기기 사이로 옮기거나 백업할 때 쓰세요.
 
 ## 바탕이 된 개념
 

@@ -3,24 +3,33 @@
 <title>문제 발굴소</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
 <link rel="stylesheet" href="styles.css">
 
 <div class="wrap">
   <header>
+    <svg class="logo" viewBox="0 0 12 11" shape-rendering="crispEdges" aria-hidden="true">
+      <path class="px-k" d="M4 0h4v1H4zM3 1h1v1H3zM8 1h1v1H8zM2 2h1v1H2zM9 2h1v1H9zM1 3h1v1H1zM10 3h1v1h-1zM0 4h1v2H0zM11 4h1v2h-1zM1 6h1v1H1zM10 6h1v1h-1zM2 7h1v1H2zM9 7h1v1H9zM3 8h1v1H3zM8 8h1v1H8zM4 9h1v1H4zM7 9h1v1H7zM5 10h2v1H5z"/>
+      <path class="px-a" d="M4 1h4v1H4zM3 2h6v1H3zM2 3h8v1H2zM1 4h10v2H1zM2 6h8v1H2zM3 7h6v1H3zM4 8h4v1H4zM5 9h2v1H5z"/>
+      <path class="px-d" d="M7 2h2v1H7zM8 3h2v1H8zM8 4h3v2H8zM8 6h2v1H8zM7 7h2v1H7zM6 8h2v1H6zM6 9h1v1H6z"/>
+      <path class="px-w" d="M4 2h2v1H4zM3 3h2v1H3zM2 4h2v1H2z"/>
+    </svg>
     <p class="kicker">Site Log · 발굴 일지</p>
     <h1>문제 발굴소</h1>
     <p>고민을 하나 적고, 직접 파 내려가 보세요. 한 단계마다 내 생각을 먼저 쓰면 AI가 근거와 빈틈을 짚어 줍니다. 답을 대신 써 주지는 않습니다.</p>
-    <div class="hdr-actions"><button class="btn small" id="reset" type="button">새 문제로 시작</button></div>
+    <nav class="tabs" id="tabs" aria-label="화면"><button type="button" data-view="dash">대시보드</button><button type="button" data-view="work">발굴 작업</button><button type="button" id="newp" class="newp">+ 새 문제</button></nav>
   </header>
+  <main id="dash" class="dash" hidden></main>
   <div class="layout">
     <ol class="strata" id="strata" aria-label="단계"></ol>
-    <main class="panel" id="panel"></main>
+    <section class="panel" id="panel"></section>
   </div>
 </div>
 
 <script src="js/state.js"></script>
 <script src="js/views.js"></script>
+<script src="js/store.js"></script>
 <script src="js/evaluate.js"></script>
 <script src="js/checks.js"></script>
+<script src="js/dashboard.js"></script>
 <script src="js/app.js"></script>

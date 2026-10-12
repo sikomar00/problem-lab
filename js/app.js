@@ -14,7 +14,7 @@
       '<button class="btn" data-act="next"' + (S.step === STEPS.length - 1 ? ' disabled' : '') + '>' + (STEPS[S.step + 1] && STEPS[S.step + 1].opt ? '다음 층 (선택)' : '다음 층') + '</button></div>';
     $strata.innerHTML = STEPS.map(function (s, i) {
       var done = S.results[s.key] && S.results[s.key].score != null;
-      return '<li class="l' + (i + 1) + (done ? ' done' : '') + '"' + (i === S.step ? ' aria-current="step"' : '') + '><button data-go="' + i + '"><span class="depth">' + (i < 6 ? '−' + (i + 1) + 'm' : '출토') + '</span><span class="nm">' + s.name + (s.opt ? '<span class="opt">선택</span>' : '') + '</span></button></li>';
+      return '<li class="l' + (i + 1) + (done ? ' done' : '') + '"' + (i === S.step ? ' aria-current="step"' : '') + '><button data-go="' + i + '"><span class="depth">' + (i < 6 ? '-' + (i + 1) + 'm' : '출토') + '</span><span class="nm">' + s.name + (s.opt ? '<span class="opt">선택</span>' : '') + '</span></button></li>';
     }).join('');
     PL.updateLocal();
     persist();
@@ -31,15 +31,35 @@
       if (again) again.focus();
     } else { PL.updateLocal(); }
   });
-  var resetTimer = null, $reset = document.getElementById('reset');
-  $reset.addEventListener('click', function () {
-    if (!resetTimer) {
-      $reset.textContent = '지워도 될까요? 한 번 더 누르세요';
-      resetTimer = setTimeout(function () { resetTimer = null; $reset.textContent = '새 문제로 시작'; }, 4000);
-      return;
-    }
-    clearTimeout(resetTimer); resetTimer = null; $reset.textContent = '새 문제로 시작';
-    PL.reset(); render(); window.scrollTo(0, 0);
+  /* ---------- 대시보드 <-> 작업 화면 ---------- */
+  var $layout = document.querySelector('.layout'), $dash = document.getElementById('dash'), $tabs = document.getElementById('tabs');
+  function setView(v) {
+    PL.view = v;
+    $layout.hidden = v !== 'work';
+    $dash.hidden = v !== 'dash';
+    Array.prototype.forEach.call($tabs.querySelectorAll('[data-view]'), function (b) {
+      if (b.getAttribute('data-view') === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+    if (v === 'dash') PL.renderDash();
+    window.scrollTo(0, 0);
+  }
+  PL.setView = setView;
+  PL.openRecord = function (id) {
+    PL.store.flushNow();
+    var rec = PL.store.get(id);
+    if (!rec) return;
+    PL.load(rec); PL.store.markOpened(); render(); setView('work');
+  };
+  PL.newProblem = function () {
+    PL.store.flushNow();
+    PL.reset(); PL.store.markOpened(); render(); setView('work');
+  };
+  $tabs.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    if (b.id === 'newp') return PL.newProblem();
+    var v = b.getAttribute('data-view');
+    if (v) { PL.store.flushNow(); setView(v); }
   });
   $strata.addEventListener('click', function (e) {
     var b = e.target.closest('[data-go]');
@@ -84,6 +104,17 @@
   });
 
   render();
+  setView('work');
+
+  /* 저장소가 준비되면 가장 최근 문제를 불러오고 대시보드를 먼저 보여 준다 */
+  PL.store.ready.then(function () {
+    var recs = PL.store.list();
+    if (recs.length && !PL.hasAny(S)) {
+      recs.sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+      PL.load(recs[0]); PL.store.markOpened(); render();
+      setView('dash');
+    } else if (PL.view === 'dash') { PL.renderDash(); }
+  });
 
   /* AI 연결은 화면을 막지 않고 뒤에서 확인 */
   if (window.claude && window.claude.use) {

@@ -18,6 +18,7 @@
     var p = S.problem;
     return head('층 1', '문제를 한 덩어리로 써 보세요', '해결책이나 원인을 섞지 말고, 지금 벌어지는 일을 있는 그대로 적습니다.') +
       '<div class="tools"><button class="btn" data-act="sample">예시로 채워 보기</button></div>' +
+      field('title', '제목', '선택. 대시보드에 보이는 이름이에요. 비우면 아래 문장이 제목이 돼요', S.title, 40) +
       field('problem.what', '어떤 일이 벌어지나요?', '예: 이번 달 5번 지각했다', p.what, 80) +
       field('problem.who', '누가 겪나요?', '', p.who) +
       field('problem.when', '언제·어디서 생기나요?', '', p.when) +
@@ -103,7 +104,7 @@
   function gauge() {
     var t = '';
     for (var i = 0; i < STEPS.length; i++) t += '<i class="' + (i === S.step ? 'cur' : i < S.step ? 'on' : '') + '"></i>';
-    return '<div class="gauge" aria-hidden="true"><div class="ticks">' + t + '</div><div class="gl"><span>지표면</span><span>현재 깊이 ' + (S.step < 6 ? '−' + (S.step + 1) + 'm' : '출토 단계') + '</span></div></div>';
+    return '<div class="gauge" aria-hidden="true"><div class="ticks">' + t + '</div><div class="gl"><span>지표면</span><span>현재 깊이 ' + (S.step < 6 ? '-' + (S.step + 1) + 'm' : '출토 단계') + '</span></div></div>';
   }
 
   PL.views = { problem: viewProblem, whys: viewWhys, tree: viewTree, hyp: viewHyp, hows: viewHows, scqa: viewScqa, final: viewFinal };
