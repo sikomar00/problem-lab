@@ -2,6 +2,8 @@
 
 고민 하나를 적고, 한 층씩 파 내려가며 문제를 뾰족하게 만드는 연습장이에요. 단계마다 내 생각을 먼저 쓰면 AI가 근거와 빈틈을 짚어 줍니다. AI는 답을 대신 써 주지 않고, 점수와 되물음만 줍니다.
 
+![문제 발굴소 첫 화면: 왼쪽에 지층처럼 쌓인 단계(문제 쓰기 → 5 Whys → 이슈 트리 → 가설과 반례 → 5 Hows → SCQA → 종합 점검), 오른쪽에 1층 입력 칸](docs/images/screen.png)
+
 ## 단계
 
 | 층 | 단계 | 쓰는 것 |
@@ -35,7 +37,7 @@ python -m http.server 8765
 
 ### 윈도우 앱
 
-`desktop/`에서 `.uild.ps1`을 실행하면 `dist\ProblemLab.exe`가 만들어져요. 자세한 내용은 [desktop/README.md](desktop/README.md)를 보세요.
+`desktop/`에서 `.\build.ps1`을 실행하면 `dist\ProblemLab.exe`가 만들어져요. 자세한 내용은 [desktop/README.md](desktop/README.md)를 보세요.
 
 ### AI 모델 선택
 
